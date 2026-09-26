@@ -12,11 +12,11 @@
     --pink: #ff3366; --purple: #7b2cbf;
     --border: rgba(255,255,255,0.12); --text: #f0f0f5;
     --muted: #8888aa; --green: #22c55e; --red: #ef4444;
+    --surface: rgba(255,255,255,0.06);
   }
   html, body { width:100%; height:100%; overflow:hidden; }
   body {
-    font-family: 'Inter', sans-serif; color: var(--text);
-    background: #0d0d1a;
+    font-family: 'Inter', sans-serif; color: var(--text); background: #0d0d1a;
     background-image:
       radial-gradient(ellipse at 20% 20%, rgba(123,44,191,0.35) 0%, transparent 60%),
       radial-gradient(ellipse at 80% 80%, rgba(255,51,102,0.25) 0%, transparent 60%);
@@ -27,16 +27,21 @@
   @keyframes fadeIn { from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);} }
 
   /* Cards */
-  .card {
-    background: rgba(18,18,36,0.82); backdrop-filter: blur(20px);
-    border: 1px solid var(--border); border-radius: 24px;
-    padding: 2.5rem; width: min(94vw, 460px);
-    box-shadow: 0 32px 64px rgba(0,0,0,.5); z-index:2;
-  }
+  .card { background: rgba(18,18,36,0.82); backdrop-filter:blur(20px); border:1px solid var(--border); border-radius:24px; padding:2.5rem; width:min(94vw,460px); box-shadow:0 32px 64px rgba(0,0,0,.5); z-index:2; }
   .logo { font-size:1.5rem; font-weight:800; color:var(--pink); display:flex; align-items:center; gap:.5rem; margin-bottom:1.5rem; justify-content:center; }
   h1 { font-size:clamp(1.5rem,4vw,2.1rem); font-weight:800; text-align:center; line-height:1.25; margin-bottom:.75rem; }
   .accent { background:linear-gradient(90deg,var(--pink),#ff9900); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
   .sub { text-align:center; color:var(--muted); margin-bottom:2rem; font-size:.95rem; line-height:1.6; }
+
+  /* Online badge on landing */
+  .online-badge {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3);
+    color:var(--green); border-radius:20px; padding:.35rem 1rem;
+    font-size:.85rem; font-weight:600; margin-bottom:1.5rem;
+  }
+  .online-badge .dot { width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:.3;} }
 
   /* Buttons */
   .btn { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.85rem 1.4rem; border:none; border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; transition:transform .15s,box-shadow .15s; width:100%; margin-bottom:.75rem; font-family:inherit; }
@@ -49,6 +54,7 @@
   .btn-outline { background:transparent; border:2px solid var(--pink); color:var(--pink); }
   .btn-outline:hover:not(:disabled) { background:rgba(255,51,102,.1); }
   .btn-red { background:var(--red); color:#fff; }
+  .btn-sm { padding:.5rem 1rem; font-size:.85rem; margin-bottom:0; width:auto; }
 
   /* Form */
   .form-group { margin-bottom:1.2rem; }
@@ -58,6 +64,10 @@
   select option { background:#1a1a2e; }
   .back-btn { background:none; border:none; color:var(--muted); font-size:.9rem; cursor:pointer; display:flex; align-items:center; gap:.4rem; margin-bottom:1.2rem; font-family:inherit; padding:0; transition:color .2s; }
   .back-btn:hover { color:var(--text); }
+
+  /* Profile avatar */
+  .profile-hint { display:flex; align-items:center; gap:.75rem; background:rgba(255,51,102,.08); border:1px solid rgba(255,51,102,.2); border-radius:12px; padding:.75rem 1rem; margin-bottom:1.5rem; font-size:.9rem; }
+  .profile-hint .ava-sm { width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0; }
 
   /* Bubbles */
   .bubbles { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
@@ -69,45 +79,65 @@
   .bubble:nth-child(5){width:50px;height:50px;left:40%;animation-delay:12s;}
   @keyframes rise { to{transform:translateY(-110vh) scale(1.3);} }
 
-  /* Chat */
-  #page-chat.active { display:flex; align-items:stretch; justify-content:flex-start; }
+  /* Chat layout */
+  #page-chat.active { display:flex; align-items:stretch; }
   .chat-layout { display:flex; width:100%; height:100vh; }
-  .sidebar { width:260px; flex-shrink:0; border-right:1px solid var(--border); background:rgba(0,0,0,.25); display:flex; flex-direction:column; padding:1.5rem 1rem; gap:1rem; overflow-y:auto; }
-  .sidebar .logo { font-size:1.1rem; margin-bottom:0; justify-content:flex-start; }
-  .sidebar h4 { font-size:.7rem; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); margin-bottom:.5rem; }
-  .online-row { display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--muted); }
-  .online-dot { width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:.4;} }
-  .recent-list { flex:1; overflow-y:auto; }
-  .recent-item { display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;border-radius:10px;transition:background .2s; }
-  .recent-item:hover { background:rgba(255,255,255,.06); }
-  .ava { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0; }
 
+  /* Sidebar */
+  .sidebar { width:270px; flex-shrink:0; border-right:1px solid var(--border); background:rgba(0,0,0,.3); display:flex; flex-direction:column; padding:1.2rem; gap:.75rem; overflow-y:auto; }
+  .sidebar .logo { font-size:1.1rem; margin-bottom:0; justify-content:flex-start; }
+  .sidebar-section { display:flex; flex-direction:column; gap:.4rem; }
+  .sidebar-section h4 { font-size:.68rem; text-transform:uppercase; letter-spacing:1.4px; color:var(--muted); padding:0 .25rem; }
+  .online-row { display:flex; align-items:center; gap:.5rem; font-size:.85rem; color:var(--green); font-weight:600; }
+  .online-dot-sm { width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:pulse 2s infinite;flex-shrink:0; }
+
+  /* Recent chat items */
+  .recent-item {
+    display:flex; align-items:center; gap:.65rem;
+    padding:.6rem .75rem; border-radius:10px;
+    cursor:pointer; transition:background .2s;
+    border:1px solid transparent;
+  }
+  .recent-item:hover { background:rgba(255,255,255,.06); border-color:var(--border); }
+  .recent-item.active-chat { background:rgba(255,51,102,.1); border-color:rgba(255,51,102,.3); }
+  .ava { width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;position:relative; }
+  .ava .unread-badge { position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--pink);border-radius:50%;font-size:.6rem;display:flex;align-items:center;justify-content:center;font-weight:800;border:2px solid #0d0d1a; }
+  .recent-text { overflow:hidden; flex:1; }
+  .recent-text .r-name { font-size:.88rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .recent-text .r-last { font-size:.75rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+
+  /* Chat main */
   .chat-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-  .chat-header { display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0; }
+  .chat-header { display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;background:rgba(0,0,0,.15); }
   .partner-info { display:flex;align-items:center;gap:.75rem; }
   .partner-ava { width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.2rem; }
   #partner-name { font-weight:700; font-size:1rem; }
   #partner-status { font-size:.8rem; color:var(--muted); }
-  .skip-btn { background:rgba(255,255,255,.08);border:none;color:var(--text);width:38px;height:38px;border-radius:50%;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center; }
-  .skip-btn:hover { background:var(--pink); }
+  .header-actions { display:flex; gap:.5rem; }
+  .icon-btn { background:rgba(255,255,255,.08);border:none;color:var(--text);width:38px;height:38px;border-radius:50%;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;font-size:.9rem; }
+  .icon-btn:hover { background:var(--pink); }
 
   #messages { flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:.75rem; }
   .msg { max-width:68%;padding:.75rem 1rem;border-radius:16px;font-size:.95rem;line-height:1.45;animation:slideUp .25s ease;word-break:break-word; }
   @keyframes slideUp { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;} }
   .msg.sent { background:var(--pink);color:#fff;align-self:flex-end;border-bottom-right-radius:4px; }
   .msg.recv { background:rgba(255,255,255,.1);align-self:flex-start;border-bottom-left-radius:4px; }
-  .msg.sys  { background:rgba(255,255,255,.05);color:var(--muted);align-self:center;font-size:.82rem;text-align:center;border-radius:20px;padding:.4rem 1rem;max-width:90%; }
+  .msg.sys  { background:rgba(255,255,255,.05);color:var(--muted);align-self:center;font-size:.82rem;text-align:center;border-radius:20px;padding:.4rem 1.2rem;max-width:90%; }
+  .msg-time { font-size:.65rem; opacity:.5; margin-top:.25rem; text-align:right; }
 
-  .input-bar { display:flex;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0; }
+  .input-bar { display:flex;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0;background:rgba(0,0,0,.1); }
   #msg-input { flex:1;border-radius:24px;padding:.8rem 1.2rem;background:rgba(0,0,0,.3); }
-  #send-btn { width:46px;height:46px;border-radius:50%;background:var(--pink);border:none;color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:transform .15s; }
+  #send-btn { width:46px;height:46px;border-radius:50%;background:var(--pink);border:none;color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:transform .15s;box-shadow:0 4px 12px rgba(255,51,102,.4); }
   #send-btn:hover:not(:disabled) { transform:scale(1.1); }
-  #send-btn:disabled { opacity:.4;cursor:not-allowed; }
+  #send-btn:disabled { opacity:.4;cursor:not-allowed;box-shadow:none; }
 
-  /* Spinner */
-  .spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px;vertical-align:middle; }
+  .spinner { display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px; }
   @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:2px; }
 
   @media(max-width:640px){ .sidebar{display:none;} }
 </style>
@@ -121,10 +151,12 @@
       <div class="bubble"></div><div class="bubble"></div>
       <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
     </div>
-    <div class="card">
+    <div class="card" style="text-align:center">
       <div class="logo"><i class="fa-solid fa-heart-pulse"></i> BennetConnect</div>
+      <div class="online-badge"><span class="dot"></span> <span id="online-count">...</span> people online now</div>
       <h1>Meet. Chat. Connect at<br><span class="accent">Bennett University</span></h1>
-      <p class="sub">Stay anonymous or create a profile.<br>Find your match or just vibe anonymously.</p>
+      <p class="sub">Stay anonymous or create a profile.<br>Chat randomly with students across campus.</p>
+      <div id="returning-user-hint" style="display:none"></div>
       <button class="btn btn-pink"   id="go-profile"><i class="fa-solid fa-user-plus"></i> Join with Profile</button>
       <button class="btn btn-purple" id="go-anon"   ><i class="fa-solid fa-user-secret"></i> Join Anonymous</button>
     </div>
@@ -134,7 +166,7 @@
   <div id="page-profile" class="page">
     <div class="card">
       <button class="back-btn" id="back-from-profile"><i class="fa-solid fa-arrow-left"></i> Back</button>
-      <div class="logo"><i class="fa-solid fa-id-card"></i> Create Profile</div>
+      <div class="logo"><i class="fa-solid fa-id-card"></i> Your Profile</div>
       <form id="profile-form">
         <div class="form-group">
           <label>Nickname *</label>
@@ -183,14 +215,27 @@
     <div class="chat-layout">
       <aside class="sidebar">
         <div class="logo"><i class="fa-solid fa-heart-pulse"></i> BennetConnect</div>
-        <div class="online-row"><span class="online-dot"></span> Online</div>
-        <div>
+        <div class="online-row"><span class="online-dot-sm"></span> <span id="chat-online-count">...</span> online</div>
+
+        <div class="sidebar-section">
           <h4>Find Partners</h4>
           <button class="btn btn-outline" id="btn-random"><i class="fa-solid fa-shuffle"></i> Random Chat</button>
         </div>
-        <div class="recent-list" id="recent-list"><h4 style="margin-bottom:.5rem">Recent</h4></div>
-        <button class="btn btn-red" id="btn-leave"><i class="fa-solid fa-right-from-bracket"></i> Leave</button>
+
+        <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+          <h4>Previous Chats</h4>
+          <div id="recent-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem;"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div id="my-profile-bar" style="display:flex;align-items:center;gap:.6rem;background:var(--surface);border-radius:10px;padding:.6rem .75rem;font-size:.85rem;">
+            <div class="ava" style="width:30px;height:30px;font-size:.75rem;"><i class="fa-solid fa-user"></i></div>
+            <span id="my-profile-name" style="flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <button onclick="clearProfileAndLeave()" title="Switch profile" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0;"><i class="fa-solid fa-right-from-bracket"></i></button>
+          </div>
+        </div>
       </aside>
+
       <main class="chat-main">
         <div class="chat-header">
           <div class="partner-info">
@@ -200,11 +245,16 @@
               <div id="partner-status">Not connected</div>
             </div>
           </div>
-          <button class="skip-btn" id="btn-skip" title="Next person"><i class="fa-solid fa-forward-step"></i></button>
+          <div class="header-actions">
+            <button class="icon-btn" id="btn-skip" title="Next person"><i class="fa-solid fa-forward-step"></i></button>
+            <button class="icon-btn" id="btn-leave" title="Leave"><i class="fa-solid fa-right-from-bracket"></i></button>
+          </div>
         </div>
+
         <div id="messages">
-          <div class="msg sys">Click <strong>Random Chat</strong> in the sidebar to find someone!</div>
+          <div class="msg sys">Click <strong>Random Chat</strong> to find someone!</div>
         </div>
+
         <div class="input-bar">
           <input type="text" id="msg-input" placeholder="Type a message..." disabled autocomplete="off">
           <button id="send-btn" disabled><i class="fa-solid fa-paper-plane"></i></button>
@@ -222,21 +272,86 @@
 // ═══════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://picvzwhbnthkmukqfdhr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpY3Z6d2hibnRoa211a3FmZGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA0MDg1OTgsImV4cCI6MjEwNTk4NDU5OH0.O7w3WOHouRHHOKtzQKGKMhVOllngA7f63uXnTyOb028';
-const sb  = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const ME  = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════════════════
+//  PERSISTENT IDENTITY (localStorage)
+// ═══════════════════════════════════════════════════════
+let ME = localStorage.getItem('bennet_user_id');
+if (!ME) {
+  ME = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  localStorage.setItem('bennet_user_id', ME);
+}
+let savedProfile = JSON.parse(localStorage.getItem('bennet_profile') || 'null');
+let savedChats   = JSON.parse(localStorage.getItem('bennet_chats')   || '{}');
+// savedChats = { roomId: { partnerId, partnerName, isAnonymous, gender, lastMsg, ts } }
 
 // ═══════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════
-let profile   = null;
-let roomId    = null;
-let pollTimer = null;   // matchmaking poll interval
-let msgChannel= null;   // realtime for messages only
+let profile    = savedProfile;
+let roomId     = null;
+let pollTimer  = null;
+let msgChannel = null;
+let presenceChannel = null;
+
+const $ = id => document.getElementById(id);
 
 // ═══════════════════════════════════════════════════════
-//  SHORTCUTS
+//  PRESENCE (online count) — updates both pages
 // ═══════════════════════════════════════════════════════
-const $ = id => document.getElementById(id);
+function startPresence() {
+  if (presenceChannel) sb.removeChannel(presenceChannel);
+  presenceChannel = sb.channel('bennet_presence', {
+    config: { presence: { key: ME } }
+  });
+  presenceChannel
+    .on('presence', { event: 'sync' }, () => {
+      const count = Object.keys(presenceChannel.presenceState()).length;
+      if ($('online-count'))      $('online-count').textContent = count;
+      if ($('chat-online-count')) $('chat-online-count').textContent = count;
+    })
+    .subscribe(async status => {
+      if (status === 'SUBSCRIBED') {
+        await presenceChannel.track({ user_id: ME, at: Date.now() });
+      }
+    });
+}
+startPresence(); // start immediately on page load
+
+// ═══════════════════════════════════════════════════════
+//  RETURNING USER HINT on landing page
+// ═══════════════════════════════════════════════════════
+function updateLandingHint() {
+  const hint = $('returning-user-hint');
+  if (savedProfile && !savedProfile.isAnonymous) {
+    hint.style.display = 'block';
+    hint.innerHTML = `
+      <div class="profile-hint">
+        <div class="ava-sm"><i class="fa-solid fa-user" style="font-size:.75rem"></i></div>
+        <div style="flex:1;text-align:left">
+          <div style="font-weight:700;font-size:.9rem">Welcome back, ${savedProfile.name}! 👋</div>
+          <div style="font-size:.78rem;color:var(--muted)">Your profile is saved</div>
+        </div>
+        <button onclick="clearSavedProfile()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0" title="Clear profile">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>`;
+  } else {
+    hint.style.display = 'none';
+  }
+}
+updateLandingHint();
+
+function clearSavedProfile() {
+  localStorage.removeItem('bennet_profile');
+  savedProfile = null; profile = null;
+  updateLandingHint();
+}
+function clearProfileAndLeave() {
+  clearSavedProfile();
+  showPage('page-landing');
+}
 
 // ═══════════════════════════════════════════════════════
 //  NAVIGATION
@@ -244,16 +359,37 @@ const $ = id => document.getElementById(id);
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   $(id).classList.add('active');
-  if (id === 'page-landing') cleanup();
+  if (id === 'page-landing') {
+    stopPoll();
+    if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
+    sb.from('waiting_queue').delete().eq('user_id', ME).then(() => {});
+    roomId = null;
+    resetChatUI();
+    updateLandingHint();
+  }
+  if (id === 'page-chat') {
+    loadSidebar();
+    updateMyProfileBar();
+  }
 }
 
-function cleanup() {
-  stopPoll();
-  if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
-  // Remove self from queue on leave
-  sb.from('waiting_queue').delete().eq('user_id', ME).then(() => {});
-  roomId = null; profile = null;
-  resetChatUI();
+function updateMyProfileBar() {
+  const p = profile || savedProfile;
+  if (p) {
+    $('my-profile-name').textContent = p.isAnonymous ? '🕶️ Anonymous' : p.name;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PRE-FILL PROFILE FORM
+// ═══════════════════════════════════════════════════════
+function prefillProfileForm() {
+  if (savedProfile && !savedProfile.isAnonymous) {
+    $('f-name').value     = savedProfile.name    || '';
+    $('f-gender').value   = savedProfile.gender   || '';
+    $('f-interest').value = savedProfile.interestedIn || '';
+    $('f-bio').value      = savedProfile.bio      || '';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -265,12 +401,19 @@ function sysMsg(html) {
   $('messages').appendChild(d);
   $('messages').scrollTop = 9e9;
 }
-function chatMsg(text, mine) {
+function chatMsg(text, mine, timeStr) {
   const d = document.createElement('div');
   d.className = 'msg ' + (mine ? 'sent' : 'recv');
-  d.textContent = text;
+  d.innerHTML = `<div>${escHtml(text)}</div>${timeStr ? `<div class="msg-time">${timeStr}</div>` : ''}`;
   $('messages').appendChild(d);
   $('messages').scrollTop = 9e9;
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 }
 function resetChatUI() {
   $('messages').innerHTML = '<div class="msg sys">Click <strong>Random Chat</strong> to find someone!</div>';
@@ -279,29 +422,98 @@ function resetChatUI() {
   $('msg-input').disabled = true;
   $('send-btn').disabled  = true;
 }
-function setSearchingUI() {
-  $('partner-name').innerHTML   = '<span class="spinner"></span> Searching...';
-  $('partner-status').textContent = 'Looking for someone online...';
-  $('msg-input').disabled = true;
-  $('send-btn').disabled  = true;
-  $('messages').innerHTML = '';
-  sysMsg('🔍 Looking for a match...');
+
+// ═══════════════════════════════════════════════════════
+//  SIDEBAR — load previous chats
+// ═══════════════════════════════════════════════════════
+function loadSidebar() {
+  const list = $('recent-list');
+  list.innerHTML = '';
+  const chats = Object.entries(savedChats).sort((a,b) => b[1].ts - a[1].ts);
+  if (chats.length === 0) {
+    list.innerHTML = '<div style="font-size:.8rem;color:var(--muted);padding:.5rem .25rem">No previous chats yet</div>';
+    return;
+  }
+  chats.forEach(([rid, info]) => {
+    const el = document.createElement('div');
+    el.className = 'recent-item' + (rid === roomId ? ' active-chat' : '');
+    el.id = 'recent_' + rid;
+    el.innerHTML = `
+      <div class="ava"><i class="fa-solid fa-user" style="font-size:.8rem"></i></div>
+      <div class="recent-text">
+        <div class="r-name">${escHtml(info.partnerName)}</div>
+        <div class="r-last">${info.lastMsg ? escHtml(info.lastMsg) : 'Tap to view history'}</div>
+      </div>`;
+    el.onclick = () => openOldChat(rid, info);
+    list.appendChild(el);
+  });
 }
 
 // ═══════════════════════════════════════════════════════
-//  POLL HELPERS
+//  OPEN OLD CHAT — load history + subscribe
+// ═══════════════════════════════════════════════════════
+async function openOldChat(rid, info) {
+  if (roomId === rid) return;
+  stopPoll();
+  if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
+  roomId = rid;
+
+  // Mark active in sidebar
+  document.querySelectorAll('.recent-item').forEach(el => el.classList.remove('active-chat'));
+  const sideEl = document.getElementById('recent_' + rid);
+  if (sideEl) sideEl.classList.add('active-chat');
+
+  $('partner-name').textContent   = info.partnerName;
+  $('partner-status').textContent = info.isAnonymous ? '🕶️ Past anonymous chat' : ('💬 Past conversation');
+  $('messages').innerHTML = '';
+  sysMsg('📂 Loading chat history...');
+
+  // Load messages from Supabase
+  const { data: msgs, error } = await sb.from('messages')
+    .select('*')
+    .eq('room_id', rid)
+    .order('created_at', { ascending: true });
+
+  $('messages').innerHTML = '';
+
+  if (error || !msgs || msgs.length === 0) {
+    sysMsg('No messages found in this conversation.');
+  } else {
+    msgs.forEach(m => chatMsg(m.content, m.sender_id === ME, fmtTime(m.created_at)));
+  }
+
+  sysMsg('↑ Chat history loaded. You can continue messaging below.');
+  $('msg-input').disabled = false;
+  $('send-btn').disabled  = false;
+  $('msg-input').focus();
+
+  // Subscribe for new messages in this room
+  msgChannel = sb.channel('msgs_' + rid)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: 'room_id=eq.' + rid
+    }, p => {
+      if (p.new.sender_id !== ME) {
+        chatMsg(p.new.content, false, fmtTime(p.new.created_at));
+        // Update last message in saved chats
+        savedChats[rid].lastMsg = p.new.content;
+        savedChats[rid].ts = Date.now();
+        localStorage.setItem('bennet_chats', JSON.stringify(savedChats));
+        loadSidebar();
+      }
+    })
+    .subscribe();
+}
+
+// ═══════════════════════════════════════════════════════
+//  MATCHMAKING — pure polling
 // ═══════════════════════════════════════════════════════
 function stopPoll() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-// ═══════════════════════════════════════════════════════
-//  MATCHMAKING — pure polling, no realtime race conditions
-// ═══════════════════════════════════════════════════════
 async function findPartner() {
-  if (!profile) { alert('Profile not set — please go back.'); return; }
-
-  // Prevent double-click
+  if (!profile) { alert('Profile not set.'); return; }
   $('btn-random').disabled = true;
   $('btn-skip').disabled   = true;
 
@@ -309,56 +521,49 @@ async function findPartner() {
   if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
   roomId = null;
 
-  setSearchingUI();
+  // Clear active state in sidebar
+  document.querySelectorAll('.recent-item').forEach(el => el.classList.remove('active-chat'));
 
-  // 1. Clean up any old entry for ME
+  $('partner-name').innerHTML   = '<span class="spinner"></span> Searching...';
+  $('partner-status').textContent = 'Looking for someone online...';
+  $('messages').innerHTML = '';
+  $('msg-input').disabled = true;
+  $('send-btn').disabled  = true;
+  sysMsg('🔍 Looking for a match...');
+
   await sb.from('waiting_queue').delete().eq('user_id', ME);
 
-  // 2. Check if anyone is already waiting
   const { data: waiting } = await sb.from('waiting_queue')
-    .select('*')
-    .neq('user_id', ME)
-    .order('joined_at', { ascending: true })
-    .limit(1);
+    .select('*').neq('user_id', ME)
+    .order('joined_at', { ascending: true }).limit(1);
 
   if (waiting && waiting.length > 0) {
-    // Someone is waiting → I grab them and create a room
     await tryCreateRoom(waiting[0]);
     return;
   }
 
-  // 3. Nobody waiting → add myself to queue and poll
   await sb.from('waiting_queue').insert({
-    user_id:       ME,
-    name:          profile.name,
-    gender:        profile.gender,
-    interested_in: profile.interestedIn,
-    is_anonymous:  profile.isAnonymous
+    user_id: ME, name: profile.name, gender: profile.gender,
+    interested_in: profile.interestedIn, is_anonymous: profile.isAnonymous
   });
 
   sysMsg('⏳ Waiting for someone to connect...');
 
-  let dotCount = 0;
+  let dots = 0;
   pollTimer = setInterval(async () => {
-    dotCount++;
-    // Update waiting dots
-    const dots = '.'.repeat((dotCount % 3) + 1);
-    $('partner-status').textContent = 'Waiting' + dots;
+    dots++;
+    $('partner-status').textContent = 'Waiting' + '.'.repeat((dots % 3) + 1);
 
-    // Check if a room was created FOR me
+    // Check if room was created for me
     const { data: myRoom } = await sb.from('rooms')
-      .select('*')
-      .or(`user1_id.eq.${ME},user2_id.eq.${ME}`)
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .select('*').or(`user1_id.eq.${ME},user2_id.eq.${ME}`)
+      .order('created_at', { ascending: false }).limit(1);
 
-    if (myRoom && myRoom.length > 0) {
+    if (myRoom && myRoom.length > 0 && myRoom[0].id !== roomId) {
       stopPoll();
       const r = myRoom[0];
       const partnerId = r.user1_id === ME ? r.user2_id : r.user1_id;
-      // Remove self from queue
       await sb.from('waiting_queue').delete().eq('user_id', ME);
-      // Get partner info if still in queue
       const { data: pInfo } = await sb.from('waiting_queue').select('*').eq('user_id', partnerId).limit(1);
       const partner = (pInfo && pInfo.length > 0) ? pInfo[0]
         : { user_id: partnerId, name: 'Someone', is_anonymous: true, gender: '' };
@@ -366,64 +571,47 @@ async function findPartner() {
       return;
     }
 
-    // Also check if another person is now waiting (race: they joined after us)
+    // Check if someone new joined the queue
     const { data: newWaiting } = await sb.from('waiting_queue')
-      .select('*')
-      .neq('user_id', ME)
-      .order('joined_at', { ascending: true })
-      .limit(1);
-
-    if (newWaiting && newWaiting.length > 0) {
-      // Remove them + create room
-      await tryCreateRoom(newWaiting[0]);
-    }
+      .select('*').neq('user_id', ME)
+      .order('joined_at', { ascending: true }).limit(1);
+    if (newWaiting && newWaiting.length > 0) await tryCreateRoom(newWaiting[0]);
 
     // Timeout after 60s
-    if (dotCount > 30) {
+    if (dots > 30) {
       stopPoll();
       await sb.from('waiting_queue').delete().eq('user_id', ME);
       $('messages').innerHTML = '';
-      sysMsg('😔 No one is online right now. Try again in a minute!');
+      sysMsg('😔 No one online right now. Try again in a minute!');
       $('partner-name').textContent   = 'No match found';
       $('partner-status').textContent = 'Try again';
       $('btn-random').disabled = false;
       $('btn-skip').disabled   = false;
     }
-  }, 2000); // poll every 2 seconds
+  }, 2000);
 }
 
 async function tryCreateRoom(partner) {
   stopPoll();
-
-  // Delete partner from queue so nobody else grabs them
   const { error: delErr } = await sb.from('waiting_queue').delete().eq('user_id', partner.user_id);
-  if (delErr) {
-    // Someone else already grabbed them — re-enter search
-    await findPartner();
-    return;
-  }
+  if (delErr) { await findPartner(); return; }
 
-  // Create the room
   const { data: room, error: roomErr } = await sb.from('rooms')
     .insert({ user1_id: ME, user2_id: partner.user_id })
     .select().single();
 
   if (roomErr || !room) {
-    console.error('Room creation failed:', roomErr);
     sysMsg('❌ Matchmaking error. Try again!');
     $('btn-random').disabled = false;
     $('btn-skip').disabled   = false;
     return;
   }
-
-  // Remove self from queue (if was waiting)
   await sb.from('waiting_queue').delete().eq('user_id', ME);
-
   joinRoom(room.id, partner);
 }
 
 // ═══════════════════════════════════════════════════════
-//  JOIN ROOM — realtime only for messages (reliable)
+//  JOIN ROOM
 // ═══════════════════════════════════════════════════════
 function joinRoom(rid, partner) {
   if (roomId === rid) return;
@@ -435,7 +623,7 @@ function joinRoom(rid, partner) {
   $('partner-name').textContent   = name;
   $('partner-status').textContent = sub;
   $('messages').innerHTML = '';
-  sysMsg('🎉 Connected with <strong>' + name + '</strong>! Say hi 👋');
+  sysMsg('🎉 Connected with <strong>' + escHtml(name) + '</strong>! Say hi 👋');
 
   $('msg-input').disabled = false;
   $('send-btn').disabled  = false;
@@ -443,27 +631,37 @@ function joinRoom(rid, partner) {
   $('btn-skip').disabled   = false;
   $('msg-input').focus();
 
-  addRecent(partner);
+  // Save to persistent chat history
+  savedChats[rid] = {
+    partnerId:   partner.user_id,
+    partnerName: name,
+    isAnonymous: !!partner.is_anonymous,
+    gender:      partner.gender || '',
+    lastMsg:     null,
+    ts:          Date.now()
+  };
+  localStorage.setItem('bennet_chats', JSON.stringify(savedChats));
+  loadSidebar();
+  // Mark as active
+  const sideEl = document.getElementById('recent_' + rid);
+  if (sideEl) sideEl.classList.add('active-chat');
 
-  // Subscribe ONLY to messages (realtime for messages is reliable)
+  // Subscribe to messages
   if (msgChannel) sb.removeChannel(msgChannel);
   msgChannel = sb.channel('msgs_' + rid)
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'messages',
       filter: 'room_id=eq.' + rid
     }, p => {
-      if (p.new.sender_id !== ME) chatMsg(p.new.content, false);
+      if (p.new.sender_id !== ME) {
+        chatMsg(p.new.content, false, fmtTime(p.new.created_at));
+        savedChats[rid].lastMsg = p.new.content;
+        savedChats[rid].ts = Date.now();
+        localStorage.setItem('bennet_chats', JSON.stringify(savedChats));
+        loadSidebar();
+      }
     })
     .subscribe();
-}
-
-function addRecent(partner) {
-  const list = $('recent-list');
-  const name = partner.is_anonymous ? 'Anonymous' : (partner.name || 'Someone');
-  const el = document.createElement('div');
-  el.className = 'recent-item';
-  el.innerHTML = `<div class="ava"><i class="fa-solid fa-user"></i></div><div><div style="font-size:.9rem;font-weight:600">${name}</div><div style="font-size:.75rem;color:var(--muted)">Recent match</div></div>`;
-  list.appendChild(el);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -474,16 +672,29 @@ async function sendMsg() {
   const text  = input.value.trim();
   if (!text || !roomId) return;
   input.value = '';
-  chatMsg(text, true);
+  chatMsg(text, true, fmtTime(new Date().toISOString()));
+
+  // Update last message in saved chats
+  if (savedChats[roomId]) {
+    savedChats[roomId].lastMsg = text;
+    savedChats[roomId].ts = Date.now();
+    localStorage.setItem('bennet_chats', JSON.stringify(savedChats));
+    loadSidebar();
+  }
+
   const { error } = await sb.from('messages').insert({ room_id: roomId, sender_id: ME, content: text });
   if (error) sysMsg('❌ Failed to send: ' + error.message);
 }
 
 // ═══════════════════════════════════════════════════════
-//  WIRE BUTTONS (inline after DOM — guaranteed to work)
+//  WIRE BUTTONS
 // ═══════════════════════════════════════════════════════
-$('go-profile').onclick        = () => showPage('page-profile');
-$('go-anon').onclick           = () => showPage('page-anon');
+$('go-profile').onclick = () => {
+  prefillProfileForm();
+  showPage('page-profile');
+};
+$('go-anon').onclick = () => showPage('page-anon');
+
 $('back-from-profile').onclick = () => showPage('page-landing');
 $('back-from-anon').onclick    = () => showPage('page-landing');
 
@@ -494,6 +705,8 @@ $('profile-form').onsubmit = function(e) {
   const interest= $('f-interest').value;
   if (!name || !gender || !interest) { alert('Please fill all required fields!'); return; }
   profile = { name, gender, interestedIn: interest, bio: $('f-bio').value, isAnonymous: false };
+  savedProfile = profile;
+  localStorage.setItem('bennet_profile', JSON.stringify(profile));
   showPage('page-chat');
 };
 
@@ -508,7 +721,6 @@ $('btn-leave').onclick  = () => showPage('page-landing');
 $('send-btn').onclick   = sendMsg;
 $('msg-input').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
 
-// Clean up queue if tab is closed
 window.addEventListener('beforeunload', () => {
   sb.from('waiting_queue').delete().eq('user_id', ME);
 });
