@@ -139,7 +139,38 @@
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:2px; }
 
-  @media(max-width:640px){ .sidebar{display:none;} }
+  @media(max-width:768px) {
+    .chat-layout { position: relative; }
+    .sidebar { 
+      position:absolute; left:0; top:0; bottom:0; z-index:100;
+      transform:translateX(-100%); transition:transform .3s ease;
+      background:rgba(13,13,26,0.95); backdrop-filter:blur(15px);
+      box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    }
+    .sidebar.open { transform:translateX(0); }
+    
+    /* Overlay when sidebar is open */
+    .sidebar-overlay {
+      display: none; position: absolute; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 99;
+      opacity: 0; transition: opacity .3s ease;
+    }
+    .sidebar-overlay.open { display: block; opacity: 1; }
+    
+    .chat-header { padding-left: 3.5rem; position: relative; }
+    .hamburger-btn {
+      position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.08); border: none; color: var(--text);
+      width: 38px; height: 38px; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .hamburger-btn:hover { background: var(--pink); }
+  }
+  
+  /* Hide hamburger on desktop */
+  @media(min-width:769px) {
+    .hamburger-btn, .sidebar-overlay { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -213,13 +244,16 @@
   <!-- ── CHAT ── -->
   <div id="page-chat" class="page">
     <div class="chat-layout">
-      <aside class="sidebar">
+      <!-- Overlay for mobile sidebar -->
+      <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+      <aside id="chat-sidebar" class="sidebar">
         <div class="logo"><i class="fa-solid fa-heart-pulse"></i> BennetConnect</div>
         <div class="online-row"><span class="online-dot-sm"></span> <span id="chat-online-count">...</span> online</div>
 
         <div class="sidebar-section">
           <h4>Find Partners</h4>
-          <button class="btn btn-outline" id="btn-random"><i class="fa-solid fa-shuffle"></i> Random Chat</button>
+          <button class="btn btn-outline" id="btn-random" onclick="toggleSidebar(false)"><i class="fa-solid fa-shuffle"></i> Random Chat</button>
         </div>
 
         <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
@@ -238,6 +272,7 @@
 
       <main class="chat-main">
         <div class="chat-header">
+          <button class="hamburger-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
           <div class="partner-info">
             <div class="partner-ava"><i class="fa-solid fa-user"></i></div>
             <div>
@@ -296,6 +331,25 @@ let msgChannel = null;
 let presenceChannel = null;
 
 const $ = id => document.getElementById(id);
+
+// ═══════════════════════════════════════════════════════
+//  MOBILE SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleSidebar(forceState) {
+  const sb = $('chat-sidebar');
+  const ov = $('sidebar-overlay');
+  if (!sb || !ov) return;
+  const isOpen = sb.classList.contains('open');
+  const willBeOpen = forceState !== undefined ? forceState : !isOpen;
+  
+  if (willBeOpen) {
+    sb.classList.add('open');
+    ov.classList.add('open');
+  } else {
+    sb.classList.remove('open');
+    ov.classList.remove('open');
+  }
+}
 
 // ═══════════════════════════════════════════════════════
 //  PRESENCE (online count) — updates both pages
@@ -444,7 +498,10 @@ function loadSidebar() {
         <div class="r-name">${escHtml(info.partnerName)}</div>
         <div class="r-last">${info.lastMsg ? escHtml(info.lastMsg) : 'Tap to view history'}</div>
       </div>`;
-    el.onclick = () => openOldChat(rid, info);
+    el.onclick = () => {
+      openOldChat(rid, info);
+      toggleSidebar(false);
+    };
     list.appendChild(el);
   });
 }
