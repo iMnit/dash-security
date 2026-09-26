@@ -577,16 +577,17 @@ async function findPartner() {
       .order('joined_at', { ascending: true }).limit(1);
     if (newWaiting && newWaiting.length > 0) await tryCreateRoom(newWaiting[0]);
 
-    // Timeout after 60s
-    if (dots > 30) {
-      stopPoll();
+    // Auto-retry after 30s — refresh queue entry and keep searching
+    if (dots > 15) {
+      dots = 0;
+      // Remove stale queue entry and re-insert to stay fresh at top
       await sb.from('waiting_queue').delete().eq('user_id', ME);
+      await sb.from('waiting_queue').insert({
+        user_id: ME, name: profile.name, gender: profile.gender,
+        interested_in: profile.interestedIn, is_anonymous: profile.isAnonymous
+      });
       $('messages').innerHTML = '';
-      sysMsg('😔 No one online right now. Try again in a minute!');
-      $('partner-name').textContent   = 'No match found';
-      $('partner-status').textContent = 'Try again';
-      $('btn-random').disabled = false;
-      $('btn-skip').disabled   = false;
+      sysMsg('🔄 Still searching... refreshing your spot in the queue.');
     }
   }, 2000);
 }
