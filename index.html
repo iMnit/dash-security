@@ -836,10 +836,6 @@
                             <option value="female">Female (Matches with Male)</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Your Outfit Style (Optional)</label>
-                        <input type="text" id="b-outfit" placeholder="e.g. Black Tuxedo, Red Dress, etc.">
-                    </div>
                     <button type="submit" class="btn btn-pink" style="background: linear-gradient(135deg, #ff3366, #ff9900);"><i class="fa-solid fa-heart"></i> Start Matching</button>
                 </form>
             </div>
@@ -1507,12 +1503,10 @@
             e.preventDefault();
             const name = $('b-name').value.trim();
             const gender = $('b-gender').value;
-            const outfit = $('b-outfit').value.trim();
             if (!name || !gender) { alert('Please provide your name and gender!'); return; }
 
             const interest = gender === 'male' ? 'female' : 'male';
             let bioStr = "Ball Night Participant";
-            if (outfit) bioStr += " | Wearing: " + outfit;
 
             checkNameUniqueness(name, () => {
                 profile = { name, gender, interestedIn: interest, bio: bioStr, isAnonymous: false };
