@@ -1220,6 +1220,26 @@
 
         async function findPartner(eventMode = null) {
             if (!profile) { alert('Profile not set.'); return; }
+            
+            const isBallNight = eventMode === 'ball_night';
+            currentEventMode = eventMode;
+
+            let myGender = profile.gender;
+            let targetGender = profile.interestedIn;
+
+            if (isBallNight) {
+                if (myGender === 'male') targetGender = 'female';
+                else if (myGender === 'female') targetGender = 'male';
+                else {
+                    alert('Ball Night matchmaking requires your profile gender to be Male or Female!');
+                    return;
+                }
+                myGender += '_bn';
+                targetGender += '_bn';
+            }
+            
+            let myInterest = targetGender;
+
             $('btn-random').disabled = true;
             if ($('btn-ball-night')) $('btn-ball-night').disabled = true;
             $('btn-skip').disabled = true;
@@ -1228,12 +1248,7 @@
             if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
             roomId = null;
 
-            // Clear active state in sidebar
             document.querySelectorAll('.recent-item').forEach(el => el.classList.remove('active-chat'));
-
-            const isBallNight = eventMode === 'ball_night';
-            currentEventMode = eventMode;
-            const specialInterest = isBallNight ? 'ball_night' : profile.interestedIn;
 
             $('partner-name').innerHTML = '<span class="spinner"></span> Searching...';
             $('partner-status').textContent = isBallNight ? 'Looking for a Ball Night partner...' : 'Looking for someone online...';
@@ -1244,10 +1259,19 @@
 
             await sb.from('waiting_queue').delete().eq('user_id', ME);
 
-            // Find someone with the exact same interest (regular or ball_night)
-            const { data: waiting } = await sb.from('waiting_queue')
-                .select('*').neq('user_id', ME).eq('interested_in', specialInterest)
-                .order('joined_at', { ascending: true }).limit(1);
+            async function checkQueue() {
+                let query = sb.from('waiting_queue').select('*').neq('user_id', ME);
+                if (targetGender !== 'everyone') {
+                    query = query.eq('gender', targetGender);
+                } else {
+                    query = query.not('gender', 'like', '%_bn');
+                }
+                const everyoneTarget = isBallNight ? 'everyone_bn' : 'everyone';
+                query = query.or(`interested_in.eq.${myGender},interested_in.eq.${everyoneTarget}`);
+                return await query.order('joined_at', { ascending: true }).limit(1);
+            }
+
+            const { data: waiting } = await checkQueue();
 
             if (waiting && waiting.length > 0) {
                 await tryCreateRoom(waiting[0], isBallNight);
@@ -1255,8 +1279,8 @@
             }
 
             await sb.from('waiting_queue').insert({
-                user_id: ME, name: profile.name, gender: profile.gender,
-                interested_in: specialInterest, is_anonymous: profile.isAnonymous
+                user_id: ME, name: profile.name, gender: myGender,
+                interested_in: myInterest, is_anonymous: profile.isAnonymous
             });
 
             sysMsg('⏳ Waiting for someone to connect...');
@@ -1284,9 +1308,7 @@
                 }
 
                 // Check if someone new joined the queue
-                const { data: newWaiting } = await sb.from('waiting_queue')
-                    .select('*').neq('user_id', ME).eq('interested_in', specialInterest)
-                    .order('joined_at', { ascending: true }).limit(1);
+                const { data: newWaiting } = await checkQueue();
                 if (newWaiting && newWaiting.length > 0) await tryCreateRoom(newWaiting[0], isBallNight);
 
                 // Auto-retry after 30s
@@ -1294,8 +1316,8 @@
                     dots = 0;
                     await sb.from('waiting_queue').delete().eq('user_id', ME);
                     await sb.from('waiting_queue').insert({
-                        user_id: ME, name: profile.name, gender: profile.gender,
-                        interested_in: specialInterest, is_anonymous: profile.isAnonymous
+                        user_id: ME, name: profile.name, gender: myGender,
+                        interested_in: myInterest, is_anonymous: profile.isAnonymous
                     });
                     $('messages').innerHTML = '';
                     sysMsg('🔄 Still searching... refreshing your spot in the queue.');
