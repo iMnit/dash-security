@@ -1378,8 +1378,17 @@
 
         async function tryCreateRoom(partner, isBallNight = false) {
             stopPoll();
-            const { error: delErr } = await sb.from('waiting_queue').delete().eq('user_id', partner.user_id);
-            if (delErr) { await findPartner(isBallNight ? 'ball_night' : null); return; }
+            // Important: we must .select() to ensure we actually deleted the row and grabbed the user.
+            const { data: delData, error: delErr } = await sb.from('waiting_queue')
+                .delete()
+                .eq('user_id', partner.user_id)
+                .select();
+                
+            if (delErr || !delData || delData.length === 0) { 
+                // They were already taken! Retry matchmaking...
+                await findPartner(isBallNight ? 'ball_night' : null); 
+                return; 
+            }
 
             const { data: room, error: roomErr } = await sb.from('rooms')
                 .insert({ user1_id: ME, user2_id: partner.user_id })
