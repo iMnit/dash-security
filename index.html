@@ -1026,6 +1026,16 @@
         // ═══════════════════════════════════════════════════════
         //  PRESENCE (online count) — updates both pages
         // ═══════════════════════════════════════════════════════
+        function trackPresence() {
+            if (!presenceChannel) return;
+            const p = profile || savedProfile;
+            if (p) {
+                presenceChannel.track({ user_id: ME, name: p.name, gender: p.gender, is_anonymous: p.isAnonymous, at: Date.now() });
+            } else {
+                presenceChannel.track({ user_id: ME, name: 'Anonymous', is_anonymous: true, at: Date.now() });
+            }
+        }
+
         function startPresence() {
             if (presenceChannel) sb.removeChannel(presenceChannel);
             presenceChannel = sb.channel('bennet_presence', {
@@ -1039,9 +1049,7 @@
                 })
                 .subscribe(async status => {
                     if (status === 'SUBSCRIBED') {
-                        const p = profile || savedProfile;
-                        const myName = p ? p.name : 'Anonymous';
-                        await presenceChannel.track({ user_id: ME, name: myName, at: Date.now() });
+                        trackPresence();
                     }
                 });
         }
@@ -1325,9 +1333,7 @@
                     const r = myRoom[0];
                     const partnerId = r.user1_id === ME ? r.user2_id : r.user1_id;
                     await sb.from('waiting_queue').delete().eq('user_id', ME);
-                    const { data: pInfo } = await sb.from('waiting_queue').select('*').eq('user_id', partnerId).limit(1);
-                    const partner = (pInfo && pInfo.length > 0) ? pInfo[0]
-                        : { user_id: partnerId, name: 'Someone', is_anonymous: true, gender: '' };
+                    const partner = await getPartnerInfo(partnerId);
                     joinRoom(r.id, partner, isBallNight);
                     return;
                 }
@@ -1336,18 +1342,38 @@
                 const { data: newWaiting } = await checkQueue();
                 if (newWaiting && newWaiting.length > 0) await tryCreateRoom(newWaiting[0], isBallNight);
 
-                // Auto-retry after 30s
+                // Auto-retry after 30s (timeout due to low traffic)
                 if (dots > 15) {
-                    dots = 0;
+                    stopPoll();
                     await sb.from('waiting_queue').delete().eq('user_id', ME);
-                    await sb.from('waiting_queue').insert({
-                        user_id: ME, name: profile.name, gender: myGender,
-                        interested_in: myInterest, is_anonymous: profile.isAnonymous
-                    });
                     $('messages').innerHTML = '';
-                    sysMsg('🔄 Still searching... refreshing your spot in the queue.');
+                    sysMsg('⚠️ Due to low traffic, we are unable to connect you right now. Please try again later.');
+                    $('partner-name').innerHTML = 'No match found';
+                    $('partner-status').textContent = 'Please try again';
+                    $('btn-random').disabled = false;
+                    if ($('btn-ball-night')) $('btn-ball-night').disabled = false;
+                    $('btn-skip').disabled = false;
                 }
             }, 2000);
+        }
+
+        async function getPartnerInfo(partnerId) {
+            // First check queue
+            const { data: pInfo } = await sb.from('waiting_queue').select('*').eq('user_id', partnerId).limit(1);
+            if (pInfo && pInfo.length > 0) return pInfo[0];
+            
+            // Fallback to presence
+            if (presenceChannel) {
+                const state = presenceChannel.presenceState();
+                for (const key in state) {
+                    for (const p of state[key]) {
+                        if (p.user_id === partnerId) {
+                            return { user_id: partnerId, name: p.name, is_anonymous: p.is_anonymous, gender: p.gender };
+                        }
+                    }
+                }
+            }
+            return { user_id: partnerId, name: 'Someone', is_anonymous: true, gender: '' };
         }
 
         async function tryCreateRoom(partner, isBallNight = false) {
@@ -1494,7 +1520,7 @@
                 profile = { name, gender, interestedIn: interest, bio: $('f-bio').value, isAnonymous: false };
                 savedProfile = profile;
                 localStorage.setItem('bennet_profile', JSON.stringify(profile));
-                if (presenceChannel) presenceChannel.track({ user_id: ME, name: name, at: Date.now() });
+                trackPresence();
                 showPage('page-chat');
             });
         };
@@ -1512,7 +1538,7 @@
                 profile = { name, gender, interestedIn: interest, bio: bioStr, isAnonymous: false };
                 savedProfile = profile;
                 localStorage.setItem('bennet_profile', JSON.stringify(profile));
-                if (presenceChannel) presenceChannel.track({ user_id: ME, name: name, at: Date.now() });
+                trackPresence();
                 showPage('page-chat');
                 
                 // Automatically trigger Ball Night matchmaking
