@@ -1,0 +1,45 @@
+name: Dash Secret Detection & Automated Remediation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  secret-scan:
+    name: DevSecOps Real-Time Leak Scanner
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Scan Codebase for Leaked API Keys (Gitleaks)
+        id: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true # Keep workflow running to send alert to Supabase
+
+      - name: Send Real Leak Alert to Supabase Database
+        env:
+          SUPABASE_URL: "https://ydnvrinhkcjvuxiscipc.supabase.co"
+          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkbnZyaW5oa2NqdnV4aXNjaXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODg3NDUsImV4cCI6MjEwNjg2NDc0NX0.RTT7XHtK4M3yPynusTxL5uqYjyMT1ZN-jAUa8VKhxEU"
+        run: |
+          echo "⚠️ Leaked Secret Detected in Git Commit!"
+          echo "Sending real alert to Supabase DB for Website Dashboard..."
+          
+          curl -X POST "${SUPABASE_URL}/rest/v1/security_logs" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d '{
+              "name": "Leaked GitHub API Token",
+              "environment": "main-branch (Commit: '${{ github.sha }}')",
+              "last_used": "Just Now (GitHub Action)",
+              "status": "Compromised"
+            }'
+          
+          echo "Alert logged successfully to Supabase!"

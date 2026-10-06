@@ -1152,9 +1152,9 @@
             return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
         function resetChatUI() {
-            $('messages').innerHTML = '<div class="msg sys">Click <strong>Random Chat</strong> to find someone!</div>';
-            $('partner-name').textContent = 'Click Random Chat to start';
-            $('partner-status').textContent = 'Not connected';
+            $('messages').innerHTML = '<div class="msg sys" style="font-size:1rem; padding: 1rem; text-align:center; background: rgba(255,255,255,0.05); border-radius:10px;">Ready to chat! Click <strong>Random Chat</strong> or <strong>Ball Night</strong> in the sidebar to find someone. 💬</div>';
+            $('partner-name').textContent = 'Not connected';
+            $('partner-status').textContent = 'Click to start chatting';
             $('msg-input').disabled = true;
             $('send-btn').disabled = true;
         }
@@ -1347,9 +1347,9 @@
                     stopPoll();
                     await sb.from('waiting_queue').delete().eq('user_id', ME);
                     $('messages').innerHTML = '';
-                    sysMsg('⚠️ Due to low traffic, we are unable to connect you right now. Please try again later.');
+                    sysMsg('<div style="text-align:center; padding: 1rem; background: rgba(255,51,102,0.1); border-radius:10px;">⚠️ Due to low traffic, we couldn\'t find a match right now.<br><br><strong>Click a button in the sidebar to try again!</strong></div>');
                     $('partner-name').innerHTML = 'No match found';
-                    $('partner-status').textContent = 'Please try again';
+                    $('partner-status').textContent = 'Click to start chatting';
                     $('btn-random').disabled = false;
                     if ($('btn-ball-night')) $('btn-ball-night').disabled = false;
                     $('btn-skip').disabled = false;
@@ -1531,6 +1531,11 @@
                 localStorage.setItem('bennet_profile', JSON.stringify(profile));
                 trackPresence();
                 showPage('page-chat');
+                
+                // Automatically trigger matchmaking
+                setTimeout(() => {
+                    findPartner();
+                }, 500);
             });
         };
 
@@ -1559,7 +1564,13 @@
 
         $('enter-anon').onclick = () => {
             profile = { name: 'Anonymous', gender: 'hidden', interestedIn: 'everyone', isAnonymous: true };
+            trackPresence();
             showPage('page-chat');
+            
+            // Automatically trigger matchmaking
+            setTimeout(() => {
+                findPartner();
+            }, 500);
         };
 
         $('btn-random').onclick = () => findPartner();

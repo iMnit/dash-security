@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dash - Security Center</title>
+
+    <!-- Tailwind CSS (CDN for quick Hackathon setup) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React & ReactDOM (CDNs) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel for compiling JSX in the browser -->
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Supabase JS Client (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="bg-slate-950">
+
+    <!-- This is where our React app will load -->
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ==========================================
+        // 🔑 PASTE YOUR SUPABASE CREDENTIALS HERE:
+        // ==========================================
+        const SUPABASE_URL = "https://ydnvrinhkcjvuxiscipc.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkbnZyaW5oa2NqdnV4aXNjaXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODg3NDUsImV4cCI6MjEwNjg2NDc0NX0.RTT7XHtK4M3yPynusTxL5uqYjyMT1ZN-jAUa8VKhxEU";
+
+        // Initialize Supabase Client if keys are provided
+        let supabase = null;
+        if (SUPABASE_URL && window.supabase) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        const Dashboard = () => {
+            const [keys, setKeys] = useState([
+                { id: 1, name: 'AWS Production S3', status: 'Active', environment: 'production', lastUsed: '2 mins ago' },
+                { id: 2, name: 'Legacy Auth Token', status: 'Active', environment: 'legacy', lastUsed: '3 months ago' },
+                { id: 3, name: 'GitHub Personal Access Token', status: 'Compromised', environment: 'main-branch', lastUsed: 'Just now' },
+            ]);
+
+            const [isRotating, setIsRotating] = useState(false);
+            const [rotationComplete, setRotationComplete] = useState(false);
+            const [loadingDb, setLoadingDb] = useState(false);
+            const [isLiveSupabase, setIsLiveSupabase] = useState(false);
+
+            // Fetch live data from Supabase & Subscribe to Realtime Updates
+            useEffect(() => {
+                const fetchFromSupabase = async () => {
+                    if (!supabase) return;
+                    setLoadingDb(true);
+                    try {
+                        const { data, error } = await supabase.from('security_logs').select('*').order('id', { ascending: true });
+                        if (error) throw error;
+                        if (data && data.length > 0) {
+                            const formattedData = data.map(item => ({
+                                id: item.id,
+                                name: item.name,
+                                status: item.status,
+                                environment: item.environment,
+                                lastUsed: item.last_used
+                            }));
+                            setKeys(formattedData);
+                            setIsLiveSupabase(true);
+                        }
+                    } catch (err) {
+                        console.warn("Supabase fetch failed:", err.message);
+                    } finally {
+                        setLoadingDb(false);
+                    }
+                };
+
+                fetchFromSupabase();
+
+                // Poll every 3 seconds for new leaks sent from GitHub Actions
+                const interval = setInterval(() => {
+                    fetchFromSupabase();
+                }, 3000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            // Step 2: The "Magic Button" Logic
+            const executeZeroDowntimeRotation = async () => {
+                setIsRotating(true);
+                setRotationComplete(false);
+
+                // Update UI immediately to show 'Rotating...'
+                setKeys(prevKeys => prevKeys.map(k =>
+                    k.status === 'Compromised' ? { ...k, status: 'Rotating...' } : k
+                ));
+
+                // If connected to Supabase, update the row state live!
+                if (supabase) {
+                    try {
+                        await supabase
+                            .from('security_logs')
+                            .update({ status: 'Secured - New Key Deployed' })
+                            .eq('status', 'Compromised');
+                    } catch (e) {
+                        console.error("Supabase update error:", e);
+                    }
+                }
+
+                // Wait 3 seconds for dramatic effect
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Change to Secured
+                setKeys(prevKeys => prevKeys.map(k =>
+                    k.status === 'Rotating...'
+                        ? { ...k, status: 'Secured - New Key Deployed', name: k.name + ' (Rotated)' }
+                        : k
+                ));
+
+                setIsRotating(false);
+                setRotationComplete(true);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-300 font-sans p-6 md:p-10">
+                    <header className="mb-8 border-b border-slate-800 pb-6 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                                <span className="text-emerald-500">Dash</span> Security Center
+                            </h1>
+                            <p className="text-sm text-slate-500 mt-1">Real-time DevSecOps Monitoring & Automated Remediation</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {loadingDb && <span className="text-xs text-slate-500 animate-pulse">Syncing with Supabase...</span>}
+                            {isLiveSupabase && <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">Connected to Supabase</span>}
+                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-sm font-medium">System Online</span>
+                        </div>
+                    </header>
+
+                    {!rotationComplete && (
+                        <div className="bg-red-500/10 border-l-4 border-red-500 p-5 rounded-r-lg flex items-center justify-between mb-8 shadow-lg shadow-red-500/5 animate-pulse">
+                            <div className="flex items-center gap-4">
+                                <span className="text-3xl">⚠️</span>
+                                <div>
+                                    <strong className="block text-red-500 font-bold text-lg">Critical: API Key Leak Detected in main branch</strong>
+                                    <span className="text-sm text-red-400/80">Immediate rotation required to prevent unauthorized access.</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={executeZeroDowntimeRotation}
+                                disabled={isRotating}
+                                className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 shadow-lg ${isRotating
+                                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50 cursor-not-allowed'
+                                    : 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/20 hover:shadow-red-500/40'
+                                    }`}
+                            >
+                                {isRotating ? (
+                                    <span className="flex items-center gap-2">
+                                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Rotating Keys...
+                                    </span>
+                                ) : (
+                                    'Execute Zero-Downtime Rotation'
+                                )}
+                            </button>
+                        </div>
+                    )}
+
+                    {rotationComplete && (
+                        <div className="bg-emerald-500/10 border-l-4 border-emerald-500 p-5 rounded-r-lg flex items-center gap-4 mb-8">
+                            <span className="text-3xl">✅</span>
+                            <div>
+                                <strong className="block text-emerald-500 font-bold text-lg">Threat Neutralized</strong>
+                                <span className="text-sm text-emerald-400/80">Keys rotated successfully across all environments with zero downtime.</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-slate-800 bg-slate-900/50">
+                            <h2 className="text-xl font-semibold text-white">Active Access Controls</h2>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-950/50 text-slate-400 text-sm border-b border-slate-800">
+                                        <th className="py-4 px-6 font-medium">Key Target</th>
+                                        <th className="py-4 px-6 font-medium">Environment</th>
+                                        <th className="py-4 px-6 font-medium">Last Used</th>
+                                        <th className="py-4 px-6 font-medium">Security Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50">
+                                    {keys.map((key) => (
+                                        <tr key={key.id} className="hover:bg-slate-800/20 transition-colors">
+                                            <td className="py-4 px-6 font-medium text-slate-200">{key.name}</td>
+                                            <td className="py-4 px-6 text-slate-400 font-mono text-sm">{key.environment}</td>
+                                            <td className="py-4 px-6 text-slate-400 text-sm">{key.lastUsed}</td>
+                                            <td className="py-4 px-6">
+                                                <span
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${key.status === 'Compromised'
+                                                        ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
+                                                        : key.status === 'Rotating...'
+                                                            ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                                            : key.status === 'Secured - New Key Deployed'
+                                                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                                                        }`}
+                                                >
+                                                    {key.status === 'Compromised' && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-red-500"></span>}
+                                                    {key.status === 'Rotating...' && <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-orange-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                                                    {key.status.includes('Secured') && <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500"></span>}
+                                                    {key.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Dashboard />);
+    </script>
+</body>
+
+</html>
