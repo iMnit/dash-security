@@ -2,9 +2,9 @@ name: Dash Secret Detection & Automated Remediation
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "frontend-ui" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "frontend-ui" ]
 
 jobs:
   secret-scan:
