@@ -23,6 +23,7 @@ jobs:
         continue-on-error: true # Keep workflow running to send alert to Supabase
 
       - name: Send Real Leak Alert to Supabase Database
+        if: steps.gitleaks.outcome == 'failure'
         env:
           SUPABASE_URL: "https://ydnvrinhkcjvuxiscipc.supabase.co"
           SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkbnZyaW5oa2NqdnV4aXNjaXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODg3NDUsImV4cCI6MjEwNjg2NDc0NX0.RTT7XHtK4M3yPynusTxL5uqYjyMT1ZN-jAUa8VKhxEU"

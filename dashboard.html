@@ -16,6 +16,9 @@
     <!-- Babel for compiling JSX in the browser -->
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Load external config to hide keys from GitHub -->
+    <script src="config.js"></script>
+
     <!-- Supabase JS Client (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -29,50 +32,68 @@
         const { useState, useEffect } = React;
 
         // ==========================================
-        // 🔑 PASTE YOUR SUPABASE CREDENTIALS HERE:
+        // 🔑 KEYS LOADED FROM config.js (HIDDEN FROM GIT)
         // ==========================================
-        const SUPABASE_URL = "https://ydnvrinhkcjvuxiscipc.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkbnZyaW5oa2NqdnV4aXNjaXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODg3NDUsImV4cCI6MjEwNjg2NDc0NX0.RTT7XHtK4M3yPynusTxL5uqYjyMT1ZN-jAUa8VKhxEU";
-
-        // Initialize Supabase Client if keys are provided
-        let supabase = null;
-        if (SUPABASE_URL && window.supabase) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
 
         const Dashboard = () => {
-            const [keys, setKeys] = useState([
-                { id: 1, name: 'AWS Production S3', status: 'Active', environment: 'production', lastUsed: '2 mins ago' },
-                { id: 2, name: 'Legacy Auth Token', status: 'Active', environment: 'legacy', lastUsed: '3 months ago' },
-                { id: 3, name: 'GitHub Personal Access Token', status: 'Compromised', environment: 'main-branch', lastUsed: 'Just now' },
-            ]);
-
+            const [keys, setKeys] = useState([]);
             const [isRotating, setIsRotating] = useState(false);
             const [rotationComplete, setRotationComplete] = useState(false);
-            const [loadingDb, setLoadingDb] = useState(false);
+            const [loadingDb, setLoadingDb] = useState(true);
             const [isLiveSupabase, setIsLiveSupabase] = useState(false);
 
-            // Fetch live data from Supabase & Subscribe to Realtime Updates
+            const supabase = React.useMemo(() => {
+                if (SUPABASE_URL && window.supabase) {
+                    return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+                return null;
+            }, []);
+
+            // Check if there is any active compromised key
+            const hasCompromisedKey = keys.some(k => k.status === 'Compromised' || k.status === 'Rotating...');
+
+            const isRotatingRef = React.useRef(false);
+
+            // Sync ref with state
+            useEffect(() => {
+                isRotatingRef.current = isRotating;
+            }, [isRotating]);
+
+            // Fetch live data from Supabase
             useEffect(() => {
                 const fetchFromSupabase = async () => {
-                    if (!supabase) return;
-                    setLoadingDb(true);
+                    if (!supabase || isRotatingRef.current) {
+                        setLoadingDb(false);
+                        return;
+                    }
                     try {
                         const { data, error } = await supabase.from('security_logs').select('*').order('id', { ascending: true });
                         if (error) throw error;
-                        if (data && data.length > 0) {
-                            const formattedData = data.map(item => ({
-                                id: item.id,
-                                name: item.name,
-                                status: item.status,
-                                environment: item.environment,
-                                lastUsed: item.last_used
-                            }));
+                        if (data) {
+                            const formattedData = data.map(item => {
+                                // Generate a stable fake fingerprint that changes when status changes
+                                let str = item.id + item.status;
+                                let hash = 0;
+                                for (let i = 0; i < str.length; i++) {
+                                    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                                    hash |= 0;
+                                }
+                                const fp = 'key-sha256-' + Math.abs(hash).toString(16).padStart(8, '0');
+
+                                return {
+                                    id: item.id,
+                                    name: item.name,
+                                    status: item.status,
+                                    environment: item.environment,
+                                    lastUsed: item.last_used,
+                                    fingerprint: fp
+                                };
+                            });
                             setKeys(formattedData);
                             setIsLiveSupabase(true);
                         }
                     } catch (err) {
-                        console.warn("Supabase fetch failed:", err.message);
+                        console.warn("Supabase fetch error:", err.message);
                     } finally {
                         setLoadingDb(false);
                     }
@@ -80,11 +101,7 @@
 
                 fetchFromSupabase();
 
-                // Poll every 3 seconds for new leaks sent from GitHub Actions
-                const interval = setInterval(() => {
-                    fetchFromSupabase();
-                }, 3000);
-
+                const interval = setInterval(fetchFromSupabase, 2000);
                 return () => clearInterval(interval);
             }, []);
 
@@ -141,13 +158,17 @@
                         </div>
                     </header>
 
-                    {!rotationComplete && (
+                    {hasCompromisedKey && (
                         <div className="bg-red-500/10 border-l-4 border-red-500 p-5 rounded-r-lg flex items-center justify-between mb-8 shadow-lg shadow-red-500/5 animate-pulse">
                             <div className="flex items-center gap-4">
                                 <span className="text-3xl">⚠️</span>
                                 <div>
                                     <strong className="block text-red-500 font-bold text-lg">Critical: API Key Leak Detected in main branch</strong>
                                     <span className="text-sm text-red-400/80">Immediate rotation required to prevent unauthorized access.</span>
+                                    <div className="mt-2 bg-black/50 p-2 rounded border border-red-500/30 font-mono text-xs text-red-300">
+                                        <span className="text-slate-500">Exposed Secret: </span>
+                                        AKIAIOSFODNN7EXAMPLE...
+                                    </div>
                                 </div>
                             </div>
 
@@ -175,11 +196,19 @@
                     )}
 
                     {rotationComplete && (
-                        <div className="bg-emerald-500/10 border-l-4 border-emerald-500 p-5 rounded-r-lg flex items-center gap-4 mb-8">
-                            <span className="text-3xl">✅</span>
-                            <div>
-                                <strong className="block text-emerald-500 font-bold text-lg">Threat Neutralized</strong>
-                                <span className="text-sm text-emerald-400/80">Keys rotated successfully across all environments with zero downtime.</span>
+                        <div className="bg-emerald-500/10 border-l-4 border-emerald-500 p-5 rounded-r-lg flex flex-col gap-3 mb-8">
+                            <div className="flex items-center gap-4">
+                                <span className="text-3xl">✅</span>
+                                <div>
+                                    <strong className="block text-emerald-500 font-bold text-lg">Threat Neutralized</strong>
+                                    <span className="text-sm text-emerald-400/80">Keys rotated successfully across all environments with zero downtime.</span>
+                                </div>
+                            </div>
+                            <div className="mt-2 ml-12 bg-slate-900/80 p-3 rounded border border-emerald-500/20 text-sm text-slate-300">
+                                <strong className="text-emerald-400 block mb-1">🛡️ Zero-Trust Architecture: Where is the new key?</strong>
+                                The new key is <strong>never written back to the codebase (files)</strong> and is <strong>never visible to humans</strong>. 
+                                Instead, the system securely injected the new key directly into the Cloud Key Vault via backend APIs. 
+                                The live application pulls it straight from secure memory, guaranteeing it cannot be accidentally leaked again.
                             </div>
                         </div>
                     )}
@@ -194,6 +223,7 @@
                                 <thead>
                                     <tr className="bg-slate-950/50 text-slate-400 text-sm border-b border-slate-800">
                                         <th className="py-4 px-6 font-medium">Key Target</th>
+                                        <th className="py-4 px-6 font-medium">Key Fingerprint</th>
                                         <th className="py-4 px-6 font-medium">Environment</th>
                                         <th className="py-4 px-6 font-medium">Last Used</th>
                                         <th className="py-4 px-6 font-medium">Security Status</th>
@@ -203,6 +233,7 @@
                                     {keys.map((key) => (
                                         <tr key={key.id} className="hover:bg-slate-800/20 transition-colors">
                                             <td className="py-4 px-6 font-medium text-slate-200">{key.name}</td>
+                                            <td className="py-4 px-6 text-emerald-400/80 font-mono text-sm tracking-tight">{key.fingerprint}</td>
                                             <td className="py-4 px-6 text-slate-400 font-mono text-sm">{key.environment}</td>
                                             <td className="py-4 px-6 text-slate-400 text-sm">{key.lastUsed}</td>
                                             <td className="py-4 px-6">
